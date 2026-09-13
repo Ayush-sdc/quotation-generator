@@ -1,0 +1,15 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.git/
+.gitignore
+.env
+temp_*
+*.aux
+*.log
+*.out
+*.pdf
+scratch/

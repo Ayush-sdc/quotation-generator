@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quotation Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; }
+        input[type="text"], input[type="number"], input[type="date"] { width: 100%; padding: 8px; }
+        .item-row { display: flex; gap: 10px; margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; }
+        button { padding: 10px 15px; cursor: pointer; background: #007bff; color: white; border: none; }
+        .generate-btn { background: #28a745; width: 100%; font-size: 16px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <h2>Generate Quotation</h2>
+    
+    <div class="form-group">
+        <label>Client Name (Invoice To)</label>
+        <input type="text" id="clientName" placeholder="e.g., Mr Vijay Tiwary (Grabbo)">
+    </div>
+    <div class="form-group">
+        <label>Quotation Ref (Invoice ID)</label>
+        <input type="text" id="invoiceId" placeholder="e.g., Q-MD-20260903">
+    </div>
+    <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="invoiceDate">
+    </div>
+
+    <h3>Project Breakdown</h3>
+    <div id="itemsContainer">
+        <!-- Dynamic items will be added here -->
+    </div>
+    <button onclick="addItem()">+ Add Item</button>
+
+    <button id="generateBtn" class="generate-btn" onclick="generatePDF()">Generate PDF</button>
+
+    <script>
+        // Start with one empty item row and default date to today
+        window.onload = () => {
+            addItem();
+            const dateInput = document.getElementById('invoiceDate');
+            if (!dateInput.value) {
+                dateInput.value = new Date().toISOString().split('T')[0];
+            }
+        };
+
+        function addItem() {
+            const container = document.getElementById('itemsContainer');
+            const row = document.createElement('div');
+            row.className = 'item-row';
+            row.innerHTML = `
+                <input type="text" placeholder="Category (e.g., Network Analysis)" class="cat" style="flex: 2;">
+                <input type="text" placeholder="Description" class="desc" style="flex: 3;">
+                <input type="number" placeholder="Qty" class="qty" style="flex: 1;" min="1" value="1">
+                <input type="number" placeholder="Rate" class="rate" style="flex: 1;" min="0" step="0.01">
+                <button onclick="this.parentElement.remove()" style="background:#dc3545;">X</button>
+            `;
+            container.appendChild(row);
+        }
+
+        async function generatePDF() {
+            const btn = document.getElementById('generateBtn');
+            const clientName = document.getElementById('clientName').value.trim();
+            const invoiceId = document.getElementById('invoiceId').value.trim();
+            const invoiceDate = document.getElementById('invoiceDate').value;
+
+            if (!clientName || !invoiceId || !invoiceDate) {
+                alert("Please fill in Client Name, Quotation Ref ID, and Date.");
+                return;
+            }
+
+            const rows = document.querySelectorAll('.item-row');
+            if (rows.length === 0) {
+                alert("Please add at least one line item.");
+                return;
+            }
+
+            const projects = [];
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const cat = row.querySelector('.cat').value.trim();
+                const desc = row.querySelector('.desc').value.trim();
+                const qtyVal = row.querySelector('.qty').value;
+                const rateVal = row.querySelector('.rate').value;
+
+                const qty = parseInt(qtyVal, 10);
+                const rate = parseFloat(rateVal);
+
+                if (!cat || !desc || isNaN(qty) || isNaN(rate)) {
+                    alert(`Please complete all fields with valid numbers for Item #${i + 1}.`);
+                    return;
+                }
+
+                projects.push({ category: cat, description: desc, qty, rate });
+            }
+
+            const payload = {
+                client_name: clientName,
+                invoice_id: invoiceId,
+                invoice_date: invoiceDate,
+                projects: projects
+            };
+
+            // Loading state
+            btn.disabled = true;
+            btn.innerText = "Compiling PDF (Multi-pass LaTeX)...";
+
+            try {
+                const response = await fetch('http://localhost:8000/generate-pdf', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    let errMsg = `Server returned status ${response.status}`;
+                    try {
+                        const errData = await response.json();
+                        if (errData.detail) errMsg = errData.detail;
+                    } catch (_) {}
+                    throw new Error(errMsg);
+                }
+
+                // Handle the PDF Download
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Quotation_${payload.invoice_id}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+            } catch (error) {
+                alert("Error generating PDF:\n" + error.message);
+                console.error(error);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Generate PDF";
+            }
+        }
+    </script>
+</body>
+</html>
