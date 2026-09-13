@@ -79,6 +79,16 @@ def cleanup_temp_files(file_paths: List[str]):
 async def healthz():
     return {"status": "healthy"}
 
+
+
+@app.get("/")
+async def root():
+    return {
+        "message": "Mycelium Dynamics API is Live!", 
+        "instruction": "This is the backend engine. Please use the Vercel URL to access the Quotation Generator UI."
+    }
+
+
 @app.post("/generate-pdf")
 async def generate_pdf(data: InvoiceRequest, background_tasks: BackgroundTasks):
     unique_id = str(uuid.uuid4())
