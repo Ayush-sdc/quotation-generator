@@ -3,88 +3,207 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quotation Generator</title>
+    <title>Mycelium Dynamics | Quotations</title>
+
+    <link rel="icon" type="image/png" href="assets/fevicon.png">
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: auto; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; }
-        .form-group input { width: 100%; padding: 8px; box-sizing: border-box; }
+        /* Spotify Design Variables */
+        :root {
+            --spotify-green: #1DB954;
+            --spotify-green-hover: #1ED760;
+            --spotify-bg: #121212;
+            --spotify-card: #181818;
+            --spotify-input: #282828;
+            --text-main: #FFFFFF;
+            --text-muted: #B3B3B3;
+        }
+
+        body { 
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
+            background-color: var(--spotify-bg);
+            color: var(--text-main);
+            padding: 40px 20px; 
+            margin: 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            background-color: var(--spotify-card);
+            padding: 40px;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 850px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        }
+
+        h2 { margin-top: 0; font-size: 28px; letter-spacing: -0.5px; }
+        h3 { margin-top: 30px; font-size: 18px; border-bottom: 1px solid #282828; padding-bottom: 10px; color: var(--text-muted);}
+
+        .form-group { margin-bottom: 20px; }
         
-        /* Styling for the dynamic line items */
-        .item-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
-        .item-row input { flex: 1; padding: 8px; }
-        .item-row .short-input { flex: 0.5; }
-        .remove-btn { background: #ff4d4d; color: white; border: none; padding: 8px 12px; cursor: pointer; border-radius: 4px; }
-        .add-btn { background: #007bff; color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 4px; margin-bottom: 20px;}
-        .generate-btn { background: #28a745; color: white; border: none; padding: 15px; width: 100%; font-size: 16px; cursor: pointer; border-radius: 4px; }
+        .form-group label { 
+            display: block; 
+            font-weight: 700; 
+            margin-bottom: 8px; 
+            color: var(--text-muted);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        input { 
+            width: 100%; 
+            padding: 14px; 
+            box-sizing: border-box; 
+            background-color: var(--spotify-input);
+            border: 1px solid transparent;
+            color: var(--text-main);
+            border-radius: 4px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border: 1px solid #727272;
+            background-color: #333333;
+        }
+
+        input::placeholder { color: #727272; }
+
+        /* Color Picker for Date Input icon in dark mode */
+        ::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.6; cursor: pointer; }
+
+        /* Line Items Styling */
+        .item-row { 
+            display: flex; 
+            gap: 12px; 
+            margin-bottom: 12px; 
+            align-items: center; 
+            background-color: #202020;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        
+        .item-row input { flex: 1; }
+        .item-row .short-input { flex: 0.4; }
+        
+        .remove-btn { 
+            background: transparent; 
+            color: var(--text-muted); 
+            border: none; 
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer; 
+            padding: 10px;
+            transition: color 0.2s;
+        }
+        .remove-btn:hover { color: #ff4d4d; }
+
+        /* Spotify Pill Buttons */
+        .add-btn { 
+            background: transparent; 
+            color: var(--text-main); 
+            border: 1px solid #727272; 
+            padding: 8px 24px; 
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer; 
+            border-radius: 500px; /* Perfect pill shape */
+            margin-bottom: 30px;
+            margin-top: 10px;
+            transition: all 0.2s;
+        }
+        .add-btn:hover { border-color: var(--text-main); transform: scale(1.02); }
+
+        .generate-btn { 
+            background-color: var(--spotify-green); 
+            color: var(--spotify-bg); 
+            border: none; 
+            padding: 16px; 
+            width: 100%; 
+            font-size: 16px; 
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer; 
+            border-radius: 500px; 
+            transition: all 0.2s ease;
+        }
+        .generate-btn:hover { 
+            background-color: var(--spotify-green-hover); 
+            transform: scale(1.01); 
+        }
+        .generate-btn:disabled {
+            background-color: #535353;
+            cursor: not-allowed;
+            transform: none;
+        }
     </style>
 </head>
 <body>
 
-    <h2>Generate Quotation</h2>
+    <div class="container">
+        <h2>Generate Quotation</h2>
 
-    <div class="form-group">
-        <label>Client Name (Invoice To)</label>
-        <input type="text" id="clientName" placeholder="e.g., Grabbo & Co.">
-    </div>
-    
-    <div class="form-group">
-        <label>Quotation Ref (Invoice ID)</label>
-        <input type="text" id="invoiceId" placeholder="e.g., Q-MD-20260903">
-    </div>
-
-    <div class="form-group">
-        <label>Date</label>
-        <input type="date" id="invoiceDate">
-    </div>
-
-    <h3>Price Breakdown</h3>
-    <div id="line-items-container">
-        <!-- The first default row -->
-        <div class="item-row">
-            <input type="text" class="category" placeholder="Project (e.g., Fullstack Website)" value="Fullstack Website">
-            <input type="text" class="description" placeholder="Description (e.g., Cloud cost)">
-            <input type="number" class="qty short-input" placeholder="Qty" value="1">
-            <input type="number" class="rate" placeholder="Cost (Rs) e.g., 2000">
-            <button type="button" class="remove-btn" onclick="this.parentElement.remove()">X</button>
+        <div class="form-group">
+            <label>Client Name (Invoice To)</label>
+            <input type="text" id="clientName" placeholder="e.g., Grabbo & Co.">
         </div>
+        
+        <div class="form-group">
+            <label>Quotation Ref (Invoice ID)</label>
+            <input type="text" id="invoiceId" placeholder="e.g., Q-MD-20260903">
+        </div>
+
+        <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="invoiceDate">
+        </div>
+
+        <h3>Price Breakdown</h3>
+        <div id="line-items-container">
+            <div class="item-row">
+                <input type="text" class="category" placeholder="Project Category" value="Fullstack Website">
+                <input type="text" class="description" placeholder="Description (e.g., Cloud cost)">
+                <input type="number" class="qty short-input" placeholder="Qty" value="1">
+                <input type="number" class="rate" placeholder="Cost (Rs)">
+                <button type="button" class="remove-btn" onclick="this.parentElement.remove()" title="Remove Item">✕</button>
+            </div>
+        </div>
+
+        <button type="button" class="add-btn" onclick="addRow()">+ Add Item</button>
+
+        <button type="button" class="generate-btn" onclick="generatePDF()">Generate PDF</button>
     </div>
-
-    <button type="button" class="add-btn" onclick="addRow()">+ Add Breakdown Description</button>
-
-    <button type="button" class="generate-btn" onclick="generatePDF()">Generate PDF</button>
 
     <script>
-        // Auto-fill today's date
         document.getElementById('invoiceDate').valueAsDate = new Date();
 
-        // Function to dynamically add new rows for the price breakdown
         function addRow() {
             const container = document.getElementById('line-items-container');
             const row = document.createElement('div');
             row.className = 'item-row';
             
-            // Copies the category from the first row to save typing, but allows it to be changed
             const firstCategory = document.querySelector('.category')?.value || '';
 
             row.innerHTML = `
-                <input type="text" class="category" placeholder="Project" value="${firstCategory}">
-                <input type="text" class="description" placeholder="Description (e.g., Website maintenance)">
+                <input type="text" class="category" placeholder="Project Category" value="${firstCategory}">
+                <input type="text" class="description" placeholder="Description">
                 <input type="number" class="qty short-input" placeholder="Qty" value="1">
                 <input type="number" class="rate" placeholder="Cost (Rs)">
-                <button type="button" class="remove-btn" onclick="this.parentElement.remove()">X</button>
+                <button type="button" class="remove-btn" onclick="this.parentElement.remove()" title="Remove Item">✕</button>
             `;
             container.appendChild(row);
         }
 
-        // Function to gather all data and send to backend
         async function generatePDF() {
             const btn = document.querySelector('.generate-btn');
             btn.innerText = "Compiling PDF...";
             btn.disabled = true;
 
             try {
-                // Scrape all the dynamically generated rows
                 const projects = [];
                 document.querySelectorAll('.item-row').forEach(row => {
                     projects.push({
@@ -99,12 +218,11 @@
                     client_name: document.getElementById('clientName').value || "Client",
                     invoice_id: document.getElementById('invoiceId').value || "REF-001",
                     invoice_date: document.getElementById('invoiceDate').value,
-                    projects: projects // This array is what Jinja2 loops through!
+                    projects: projects 
                 };
 
-                // Remember to change this URL back to your Render URL when deploying to the cloud!
-                // CORRECT: Points directly to the POST route
-                const response = await fetch("https://quotation-generator-dn32.onrender.com/generate-pdf",{
+                // 🛑 CRITICAL: PASTE YOUR LIVE RENDER URL HERE BEFORE PUSHING TO GITHUB 🛑
+                const response = await fetch("https://quotation-generator-xxxx.onrender.com/generate-pdf", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(payload)
@@ -115,7 +233,6 @@
                     throw new Error(errorData.detail || "Server Error");
                 }
 
-                // Handle the binary PDF stream and trigger download
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
