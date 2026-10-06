@@ -7,7 +7,7 @@ import jinja2
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, constr
 
 app = FastAPI(title="Quotation & Invoice Generator API")
 
@@ -65,6 +65,11 @@ class InvoiceRequest(BaseModel):
     invoice_id: str
     invoice_date: str
     projects: List[ProjectItem]
+    validity: constr(strip_whitespace=True, min_length=1, max_length=100) = "30 days"
+    advance_payment: constr(strip_whitespace=True, min_length=1, max_length=100) = "50%"
+    remaining_payment: constr(strip_whitespace=True, min_length=1, max_length=100) = "50%"
+    third_party_costs: constr(strip_whitespace=True, min_length=1, max_length=2000) = "domain, hosting, paid APIs/services, SMS/WhatsApp/email usage"
+    excluded_features: constr(strip_whitespace=True, min_length=1, max_length=4000) = "customer dashboard/login, advanced multi-city builder, online payments, automated quote versioning, live hotel/flight booking APIs, AI itinerary, vendor/agent portals, mobile apps and advanced analytics"
 
 def cleanup_temp_files(file_paths: List[str]):
     """Safely removes temporary compilation files after response delivery."""
@@ -120,7 +125,12 @@ async def generate_pdf(data: InvoiceRequest, background_tasks: BackgroundTasks):
             client_name=safe_client_name,
             invoice_id=safe_invoice_id,
             invoice_date=safe_invoice_date,
-            projects=safe_projects
+            projects=safe_projects,
+            validity=escape_latex(data.validity),
+            advance_payment=escape_latex(data.advance_payment),
+            remaining_payment=escape_latex(data.remaining_payment),
+            third_party_costs=escape_latex(data.third_party_costs),
+            excluded_features=escape_latex(data.excluded_features),
         )
 
         # Write the populated template to a unique temporary .tex file

@@ -52,7 +52,7 @@
             letter-spacing: 1px;
         }
 
-        input { 
+        input, textarea { 
             width: 100%; 
             padding: 14px; 
             box-sizing: border-box; 
@@ -64,13 +64,15 @@
             transition: all 0.2s ease;
         }
 
-        input:focus {
+        input:focus, textarea:focus {
             outline: none;
             border: 1px solid #727272;
             background-color: #333333;
         }
 
-        input::placeholder { color: #727272; }
+        input::placeholder, textarea::placeholder { color: #727272; }
+        textarea { font-family: inherit; resize: vertical; min-height: 100px; }
+        .terms-help { color: var(--text-muted); font-size: 14px; line-height: 1.5; }
 
         /* Color Picker for Date Input icon in dark mode */
         ::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.6; cursor: pointer; }
@@ -175,6 +177,29 @@
 
         <button type="button" class="add-btn" onclick="addRow()">+ Add Item</button>
 
+        <h3>Terms &amp; Conditions</h3>
+        <p class="terms-help">Edit these values for this quotation. Include the unit for validity (e.g., 30 days) and the % sign for payment percentages.</p>
+        <div class="form-group">
+            <label for="validity">Quotation Validity</label>
+            <input type="text" id="validity" value="30 days" placeholder="e.g., 30 days" maxlength="100" required>
+        </div>
+        <div class="form-group">
+            <label for="advancePayment">Advance Payment</label>
+            <input type="text" id="advancePayment" value="50%" placeholder="e.g., 50%" maxlength="100" required>
+        </div>
+        <div class="form-group">
+            <label for="remainingPayment">Remaining Payment Upon Completion</label>
+            <input type="text" id="remainingPayment" value="50%" placeholder="e.g., 50%" maxlength="100" required>
+        </div>
+        <div class="form-group">
+            <label for="thirdPartyCosts">Third-party Costs Billed Separately</label>
+            <textarea id="thirdPartyCosts" rows="3" maxlength="2000" required>domain, hosting, paid APIs/services, SMS/WhatsApp/email usage</textarea>
+        </div>
+        <div class="form-group">
+            <label for="excludedFeatures">Excluded Features</label>
+            <textarea id="excludedFeatures" rows="4" maxlength="4000" required>customer dashboard/login, advanced multi-city builder, online payments, automated quote versioning, live hotel/flight booking APIs, AI itinerary, vendor/agent portals, mobile apps and advanced analytics</textarea>
+        </div>
+
         <button type="button" class="generate-btn" onclick="generatePDF()">Generate PDF</button>
     </div>
 
@@ -204,6 +229,24 @@
             btn.disabled = true;
 
             try {
+                const termFields = {
+                    validity: 'validity',
+                    advance_payment: 'advancePayment',
+                    remaining_payment: 'remainingPayment',
+                    third_party_costs: 'thirdPartyCosts',
+                    excluded_features: 'excludedFeatures'
+                };
+                const terms = {};
+                for (const [key, id] of Object.entries(termFields)) {
+                    const field = document.getElementById(id);
+                    field.setCustomValidity(field.value.trim() ? '' : 'Please fill in this quotation term.');
+                    if (!field.reportValidity()) {
+                        field.focus();
+                        return;
+                    }
+                    terms[key] = field.value.trim();
+                }
+
                 const projects = [];
                 document.querySelectorAll('.item-row').forEach(row => {
                     projects.push({
@@ -218,7 +261,8 @@
                     client_name: document.getElementById('clientName').value || "Client",
                     invoice_id: document.getElementById('invoiceId').value || "REF-001",
                     invoice_date: document.getElementById('invoiceDate').value,
-                    projects: projects 
+                    projects: projects,
+                    ...terms
                 };
 
                 // 🛑 CRITICAL: PASTE YOUR LIVE RENDER URL HERE BEFORE PUSHING TO GITHUB 🛑
@@ -230,7 +274,11 @@
 
                 if (!response.ok) {
                     const errorData = await response.json();
-                    throw new Error(errorData.detail || "Server Error");
+                    const detail = errorData.detail;
+                    const message = Array.isArray(detail)
+                        ? detail.map(issue => `${issue.loc.join('.')}: ${issue.msg}`).join('; ')
+                        : detail;
+                    throw new Error(message || "Server Error");
                 }
 
                 const blob = await response.blob();
