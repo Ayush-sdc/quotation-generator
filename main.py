@@ -69,6 +69,7 @@ class InvoiceRequest(BaseModel):
     advance_payment: constr(strip_whitespace=True, min_length=1, max_length=100) = "50%"
     remaining_payment: constr(strip_whitespace=True, min_length=1, max_length=100) = "50%"
     third_party_costs: constr(strip_whitespace=True, min_length=1, max_length=2000) = "domain, hosting, paid APIs/services, SMS/WhatsApp/email usage"
+    included_features: constr(strip_whitespace=True, min_length=1, max_length=4000) = "Phase-1 MVP modules listed above"
     excluded_features: constr(strip_whitespace=True, min_length=1, max_length=4000) = "customer dashboard/login, advanced multi-city builder, online payments, automated quote versioning, live hotel/flight booking APIs, AI itinerary, vendor/agent portals, mobile apps and advanced analytics"
 
 def cleanup_temp_files(file_paths: List[str]):
@@ -130,6 +131,7 @@ async def generate_pdf(data: InvoiceRequest, background_tasks: BackgroundTasks):
             advance_payment=escape_latex(data.advance_payment),
             remaining_payment=escape_latex(data.remaining_payment),
             third_party_costs=escape_latex(data.third_party_costs),
+            included_features=escape_latex(data.included_features),
             excluded_features=escape_latex(data.excluded_features),
         )
 
