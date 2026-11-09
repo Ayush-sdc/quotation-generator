@@ -515,12 +515,24 @@
                 });
 
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    const detail = errorData.detail;
-                    const message = Array.isArray(detail)
-                        ? detail.map(issue => `${issue.loc.join('.')}: ${issue.msg}`).join('; ')
-                        : detail;
-                    throw new Error(message || "Server Error");
+                    let errorMessage = "Server Error (" + response.status + ")";
+                    try {
+                        const errorData = await response.json();
+                        const detail = errorData.detail;
+                        errorMessage = Array.isArray(detail)
+                            ? detail.map(issue => `${issue.loc.join('.')}: ${issue.msg}`).join('; ')
+                            : (detail || errorMessage);
+                    } catch (parseErr) {
+                        if (response.status === 502 || response.status === 503 || response.status === 504) {
+                            errorMessage = "Backend server was waking up from sleep. Please wait 10 seconds and click Generate PDF again.";
+                        } else {
+                            try {
+                                const text = await response.text();
+                                errorMessage = text.slice(0, 150) || errorMessage;
+                            } catch (_) {}
+                        }
+                    }
+                    throw new Error(errorMessage);
                 }
 
                 const blob = await response.blob();
