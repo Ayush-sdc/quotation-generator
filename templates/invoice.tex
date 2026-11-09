@@ -1,5 +1,9 @@
 \documentclass[12pt]{article}
 \usepackage[a4paper, top=0.6in, bottom=1.5in, left=1in, right=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{times}
+\usepackage{mathptmx} % Times Roman font for text and math
+\renewcommand{\familydefault}{\rmdefault}
 \usepackage{graphicx}
 \graphicspath{{assets/}{../assets/}}
 \usepackage{array}
@@ -9,17 +13,18 @@
 \usepackage{fancyhdr}
 \usepackage{eso-pic}
 \usepackage{tikz} % Used for artifact-free watermark opacity
-\usepackage{tfrupee} % Added for the Indian Rupee symbol
+\IfFileExists{tfrupee.sty}{%
+    \usepackage{tfrupee}%
+}{%
+    \providecommand{\rupee}{Rs.~}%
+} % Added for the Indian Rupee symbol
 
-% Company Information Variables
-\newcommand{\companyname}{Mycelium Dynamics Pvt Ltd.}
-\newcommand{\companyaddress}{167, Kailash hills, East of Kailash, New Delhi, Delhi 110065}
-\newcommand{\companycity}{New Delhi}
-\newcommand{\companystate}{Delhi}
-\newcommand{\companyzip}{110065}
-\newcommand{\companywebsite}{https://www.myceliumdynamics.com/}
-\newcommand{\companyemail}{connect@myceliumdynamics.com}
-\newcommand{\companyphone}{+91 91834 76440}
+% Company Information Variables (dynamically rendered from API)
+\newcommand{\companyname}{<< company_name >>}
+\newcommand{\companyaddress}{<< company_address >>}
+\newcommand{\companywebsite}{<< company_website >>}
+\newcommand{\companyemail}{<< company_email >>}
+\newcommand{\companyphone}{<< company_phone >>}
 \newcommand{\companylogo}{company_logo.png}
 \newcommand{\watermarklogo}{Watermark.png} % Watermark image filename
 
@@ -43,7 +48,7 @@
 % Add background watermark logo centered cleanly using TikZ opacity (avoids transparent package text artifacts)
 \AddToShipoutPictureBG{%
     \begin{tikzpicture}[remember picture, overlay]
-        \node[opacity=0.5] at (current page.center) {\includegraphics[width=25cm]{\watermarklogo}};
+        \node[opacity=0.6] at (current page.center) {\includegraphics[width=25cm]{\watermarklogo}};
     \end{tikzpicture}%
 }
 
@@ -134,19 +139,51 @@
 % Display projects
 \forlistloop{\processprojects}{\projectlist}
 
-% Updated Grand Total formatting
-\noindent{\textbf{Grand Total:}} \rupee\fpeval{\grandtotal} /-
+% Pricing & GST Summary Table
+\vspace{0.2cm}
+\noindent
+\hfill
+\begin{tabular}{|l|r|}
+    \hline
+    \textbf{Subtotal} & \rupee << subtotal >> \\
+    <% if gst_rate > 0 %>
+    \hline
+    \textbf{GST (<< gst_rate_display >>\%)} & \rupee << gst_amount >> \\
+    <% endif %>
+    <% if roundoff_amount and roundoff_amount < 0 %>
+    \hline
+    \textbf{Round Off} & \rupee << roundoff >> \\
+    <% endif %>
+    \hline
+    \textbf{Grand Total} & \textbf{\rupee << grand_total >> /-} \\
+    \hline
+\end{tabular}
+\par\vspace{0.4cm}
 
-\vspace{0.4cm}
+% Terms and Conditions
 \noindent{\textbf{Terms \& Conditions:}}
 \begin{enumerate}
+    <% if validity %>
     \item Validity: This quotation is valid for << validity >> from the date of issue.
+    <% endif %>
+    <% if advance_payment or remaining_payment %>
     \item Payment Terms: << advance_payment >> advance payment to commence work; remaining << remaining_payment >> upon completion.
-    \item Scope: This quotation covers only the Phase-1 MVP modules listed above.
+    <% endif %>
+    <% if timeline %>
+    \item Timeline: <% if "from receiving" in timeline or "Estimated" in timeline or "estimated" in timeline or "completion" in timeline %><< timeline >><% else %>Estimated time for completion is << timeline >> from receiving the initial deposit and requirements.<% endif %>
+    <% endif %>
+    <% if scope %>
+    \item Scope: << scope >>
+    <% endif %>
+    <% if third_party_costs %>
     \item Third-party costs (<< third_party_costs >>) are billed separately.
-    \item Included: << included_features >>.
+    <% endif %>
+    <% if excluded_features %>
     \item Excluded: << excluded_features >>.
-    \item Any feature not listed in the included scope will be quoted and billed separately.
+    <% endif %>
+    <% if additional_terms %>
+    \item << additional_terms >>
+    <% endif %>
 \end{enumerate}
 
 \end{document}
