@@ -506,8 +506,10 @@
                     ...terms
                 };
 
-                // Send request directly to local backend (or relative endpoint)
-                const endpoint = (window.location.protocol === 'file:') ? "http://127.0.0.1:8000/generate-pdf" : "/generate-pdf";
+                // 🛑 CRITICAL: AUTO DETECT LOCALHOST VS LIVE VERCEL/RENDER DEPLOYMENT 🛑
+                const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
+                const endpoint = isLocal ? "http://127.0.0.1:8000/generate-pdf" : "https://quotation-generator-dn32.onrender.com/generate-pdf";
+
                 const response = await fetch(endpoint, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
